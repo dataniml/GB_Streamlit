@@ -82,6 +82,7 @@ if uploaded is not None:
 
     st.image(uploaded.getvalue(), caption="Uploaded image", use_container_width=True)
 
+    status_slot = st.empty()
     if st.button("Analyze image", type="primary", use_container_width=True):
         if not MODEL_PATH.exists():
             st.error(f"Model file not found at: {MODEL_PATH}")
@@ -104,7 +105,7 @@ if uploaded is not None:
         )
 
         try:
-            with st.status("Processing image...", expanded=True) as status:
+            with status_slot.status("Processing image...", expanded=True) as status:
                 st.write("1/3 Loading detection model")
                 model = load_detection_model(str(MODEL_PATH), device="cpu")
 
@@ -125,8 +126,6 @@ if uploaded is not None:
                     "filename": raw_result["filename"],
                     "board_mode": raw_result["board_mode"],
                     "detections": raw_result["detections"],
-                    "detections_before_filtering": raw_result["detections_before_filtering"],
-                    "filtered_by_size": raw_result["removed_too_large"],
                     "processing_seconds": elapsed,
                     "rectified_rgb": raw_result["rectified_rgb"],
                     "annotated_preview": resize_for_preview(raw_result["annotated_rgb"]),
@@ -142,11 +141,9 @@ if uploaded is not None:
 result = st.session_state.result
 if result:
     detections = result["detections"]
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2 = st.columns(2)
     c1.metric("Detected mites", len(detections))
-    c2.metric("Raw detections", result["detections_before_filtering"])
-    c3.metric("Filtered by size", result["filtered_by_size"])
-    c4.metric("Processing time", f'{result["processing_seconds"]:.1f} s')
+    c2.metric("Processing time", f'{result["processing_seconds"]:.1f} s')
 
     if result["board_mode"] == "perspective":
         st.success("Sticky board detected via 4 corners and perspective-rectified.")
